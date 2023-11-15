@@ -7,10 +7,21 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 import logging
 from typing import Optional
+from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
 
 
 @app.exception_handler(RequestValidationError)
@@ -36,11 +47,6 @@ class PromptRequest(BaseModel):
 async def test_endpoint():
     logging.info("Test endpoint hit")
     return {"message": "Test endpoint is working!"}
-
-#@app.post("/process/")
-#async def process_prompts(request: PromptRequest):
-#    logging.info(f"Simple Test: Received request: {request}")
-#    return {"message": "Simple test response from /process/"}
 
 @app.post("/process/")
 async def process_prompts(request: PromptRequest, background_tasks: BackgroundTasks):
