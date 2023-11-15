@@ -6,19 +6,6 @@ API_URL = "https://api.openai.com/v1/chat/completions"
 
 logging.basicConfig(level=logging.INFO)
 
-def is_valid_api_key(api_key):
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": "gpt-3.5-turbo-16k",
-        "messages": [{"role": "user", "content": "test"}],
-        "max_tokens": 350
-    }
-    response = requests.post(API_URL, headers=headers, json=data)
-    return response.status_code == 200
-
 def get_answer(prompt, model_choice, common_instructions, api_key, temperature, seed):
     full_prompt = f"{common_instructions}\n{prompt}" if common_instructions else prompt
     headers = {
@@ -47,17 +34,19 @@ def get_answer(prompt, model_choice, common_instructions, api_key, temperature, 
         logging.error(f"Exception occurred while parsing the response: {e}")
         return None, None 
 
-def get_answers(prompts, model_choice, common_instructions, api_key, temperature, seed, progress_bar):
+def get_answers(prompts, model_choice, common_instructions, api_key, temperature, seed, task_id, tasks):
     results = []
     total = len(prompts)
     for index, prompt in enumerate(prompts):
         answer, system_fingerprint = get_answer(prompt, model_choice, common_instructions, api_key, temperature, seed)
         results.append(answer)
-        # Update the progress bar
-        progress = (index + 1) / total
-        progress_bar.progress(progress)
         logging.info(f"Processing prompt {index+1}/{total}: {prompt[:50]}... System Fingerprint: {system_fingerprint}")
+        time.sleep(2)
 
-        time.sleep(2) 
+    # Update the task status in the global dictionary
+    tasks[task_id] = {"status": "completed", "results": results}
+    return {"status": "completed", "results": results}
 
-    return results
+    # Update the task status in the global dictionary
+    tasks[task_id] = {"status": "completed", "results": results}
+    return {"status": "completed", "results": results}

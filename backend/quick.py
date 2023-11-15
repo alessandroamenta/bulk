@@ -6,23 +6,6 @@ API_URL = "https://api.openai.com/v1/chat/completions"
 
 logging.basicConfig(level=logging.INFO)
 
-async def is_valid_api_key(api_key):
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": "gpt-3.5-turbo-16k",  # Use the model you want to check with
-        "messages": [{"role": "user", "content": "test"}],
-        "max_tokens": 350
-    }
-    async with aiohttp.ClientSession() as session:
-        async with session.post(API_URL, headers=headers, json=data) as response:
-            if response.status == 200:
-                return True  # The API key is valid
-            else:
-                return False  # The API key is invalid or there was another error
-
 async def get_answer(session, prompt, model_choice, common_instructions, api_key, temperature, seed): 
     full_prompt = f"{common_instructions}\n{prompt}" if common_instructions else prompt
     headers = {
@@ -66,7 +49,7 @@ async def get_answer(session, prompt, model_choice, common_instructions, api_key
             return None
 
 
-async def get_answers(prompts, model_choice, common_instructions, api_key, temperature, seed, batch_size, progress_bar):
+async def get_answers(prompts, model_choice, common_instructions, api_key, temperature, seed, batch_size, task_id, tasks):
     results = []
     total = len(prompts)
     # Use a context manager to ensure the session is closed after use
@@ -77,10 +60,10 @@ async def get_answers(prompts, model_choice, common_instructions, api_key, tempe
             batch_results = await asyncio.gather(*tasks)
             results.extend(batch_results)
 
-            # Update progress bar
-            progress = min((i + batch_size) / total, 1)
-            progress_bar.progress(progress)
+            # No progress bar update needed here
             # Check if we need to wait before the next batch
             if i + batch_size < len(prompts):
                 await asyncio.sleep(5)  # Adjust the delay as needed
-    return results
+        # Update the task status in the global dictionary
+    tasks[task_id] = {"status": "completed", "results": results}
+    return {"status": "completed", "results": results}
